@@ -1,0 +1,14 @@
+# folders to ignore
+data/
+runs/
+output/
+inputs/
+models/
+models_clip/
+__pycache__/
+# files to ignored
+yolov5s.pt
+Yolov5_StrongSORT_OSNet/
+DIS/
+BoT-SORT/
+tests/

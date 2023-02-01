@@ -1,0 +1,43 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Inference",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            
+            "args": ["--source", "tph_yolov5/input/videos/extractA_Pilot2_review.mp4",
+                "--data" , "tph_yolov5/data/dataset_tractor.yaml",
+                "--weights", "tph_yolov5/models/best_tractorA.pt",
+                "--img", "1920",
+                "--save-txt",
+                "--show-results",
+                "--iou-thres", "0.001",
+                "--n_init", "25",
+                "--max_cosine_distance", "0.99",
+                "--max_iou_distance", "0.99",
+                "--conf-thres", "0.4"
+            ]
+            /*
+            "args": [
+                "video", 
+                "--path", "BoT-SORT/data/estacion_pexels.mp4", 
+                "-f", "BoT-SORT/yolox/exps/example/mot/yolox_x_mix_det.py", 
+                "-c", "BoT-SORT/pretrained/bytetrack_x_mot17.pth.tar", 
+                "--with-reid", 
+                "--save_result",
+                "--fuse-score", 
+                "--fp16", 
+                "--fuse"
+            ]
+            */
+        }
+
+    ]
+}

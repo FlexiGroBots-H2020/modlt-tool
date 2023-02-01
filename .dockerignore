@@ -1,0 +1,9 @@
+#folders to be ignored
+**/input/
+**/output/
+**/runs/
+**/Yolov5_StrongSORT_OSNet/
+**/DIS/
+**/BoT-SORT/
+**/strong_sort/
+**/.git/
