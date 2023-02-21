@@ -30,7 +30,7 @@ if str(ROOT / 'strong_sort') not in sys.path:
     sys.path.append(str(ROOT / 'strong_sort'))  # add strong_sort ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from UAV_ATD_utils import parser_ATD, update_tracks, xyxy2tlwh, xyxy2xywh
+from UAV_ATD_utils import parser_ATD, update_tracks, distance_between_bboxes, extract_bbox_from_track, dist_awareness
 
 # Imports TPH-YOLOv5
 from tph_yolov5.models.experimental import attempt_load
@@ -235,6 +235,27 @@ def main(args):
                 
             else:
                 LOGGER.info('No detections')
+                
+        list_bboxes = extract_bbox_from_track(tracker)
+        if list_bboxes != []:
+            distances, img_distance = distance_between_bboxes(list_bboxes, im0, dist_thres=20)
+            list_dist_awrns = dist_awareness(tracker, distances, names, dist_awr_thres=10)
+            LOGGER.info(list_dist_awrns)
+
+            h,w,c = im0.shape
+
+            offset = 10 
+
+            font = cv2.FONT_HERSHEY_SIMPLEX
+
+            for itr, word in enumerate(list_dist_awrns):
+                offset += 100
+                cv2.putText(im0, word, (20, offset), font, 3, (0, 0, 255), 3)
+                        
+        else:
+            distances = []
+            img_distance = im0
+
         
         # Save video (tracking)
         if not args.nosave:
@@ -248,6 +269,7 @@ def main(args):
         except:
             logger.info(f"frame {frame_id}/{dataset.nf} Done. (detect:{t4 - t2:.3f}s / track:{t5 - t4:.3f}s)") 
         frame_id += 1
+        
 
         
     logger.info(f"Done") 

@@ -191,3 +191,113 @@ def get_color_for(class_num):
     rgb = tuple(int(hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
 
     return rgb
+
+def distance_between_bboxes(bboxes, image):
+    """
+    Calculates the distance between all pairs of bounding boxes in a list in function of their sizes and adds lines connecting their center points to the input image with a color code according to the relative distance.
+
+    Parameters:
+    bboxes (list): A list of tuples representing the bounding boxes in the format (x, y, width, height).
+    image (ndarray): A NumPy array representing the input image with bounding boxes drawn on it.
+
+    Returns:
+    list: A list of tuples representing the distances between all pairs of bounding boxes.
+    ndarray: A NumPy array representing the input image with lines connecting the center points of the bounding boxes added to it.
+    """
+    distances = []
+
+    # Loop through all possible pairs of bounding boxes and calculate the distances between them.
+    for i in range(len(bboxes)):
+        for j in range(i + 1, len(bboxes)):
+            bbox1 = bboxes[i]
+            bbox2 = bboxes[j]
+            # Call the distance_between_bboxes function to calculate the distance and draw the line.
+            distance, image = distance_between_bboxes(bbox1, bbox2, image)
+            distances.append(distance)
+
+    return distances, image
+
+
+def distance_between_2bboxes(bbox1, bbox2, image, dist_thres):
+    """
+    Calculates the distance between two bounding boxes in function of their sizes and adds a line connecting their center points to the input image with a color code according to the relative distance.
+
+    Parameters:
+    bbox1 (tuple): A tuple representing the first bounding box in the format (x, y, width, height).
+    bbox2 (tuple): A tuple representing the second bounding box in the format (x, y, width, height).
+    image (ndarray): A NumPy array representing the input image with bounding boxes drawn on it.
+    dist_thres (int): A int value that set the threshold to consider to objects close to each other.
+
+    Returns:
+    float: The distance between the two bounding boxes.
+    ndarray: A NumPy array representing the input image with a line connecting the center points of the bounding boxes added to it.
+    """
+    # Extract the x, y, width, and height values from the bounding boxes.
+    x1, y1, w1, h1 = bbox1
+    x2, y2, w2, h2 = bbox2
+
+    # Calculate the center points of the bounding boxes.
+    center1_x = x1 + (w1 / 2)
+    center1_y = y1 + (h1 / 2)
+    center2_x = x2 + (w2 / 2)
+    center2_y = y2 + (h2 / 2)
+
+    # Calculate the distance between the center points of the bounding boxes.
+    distance = ((center1_x - center2_x) / ((w1 + w2) / 2))**2 + ((center1_y - center2_y) / ((h1 + h2) / 2))**2
+
+    # Determine the color of the line based on the relative distance between the bounding boxes.
+    color = tuple(np.array([0, 255, 0]) + (np.array([0, 0, 255]) - np.array([0, 255, 0])) * (1 - distance/dist_thres))
+
+    # Add a line connecting the center points to the image.
+    cv2.line(image, (int(center1_x), int(center1_y)), (int(center2_x), int(center2_y)), color, 3)
+
+    return distance, image
+
+
+def distance_between_bboxes(bboxes, image, dist_thres=30):
+    """
+    Calculates the distance between all pairs of bounding boxes in a list in function of their sizes and adds lines connecting their center points to the input image with a color code according to the relative distance.
+
+    Parameters:
+    bboxes (list): A list of tuples representing the bounding boxes in the format (x, y, width, height).
+    image (ndarray): A NumPy array representing the input image with bounding boxes drawn on it.
+    dist_thres (int): A int value that set the threshold to consider to objects close to each other.
+
+    Returns:
+    list: A list of tuples representing the distances between all pairs of bounding boxes.
+    ndarray: A NumPy array representing the input image with lines connecting the center points of the bounding boxes added to it.
+    """
+    distances = []
+
+    # Loop through all possible pairs of bounding boxes and calculate the distances between them.
+    for i in range(len(bboxes)):
+        for j in range(i + 1, len(bboxes)):
+            bbox1 = bboxes[i][0]
+            bbox2 = bboxes[j][0]
+            id_bbx1 = bboxes[i][1]
+            id_bbx2 = bboxes[j][1]
+            clss_bbx1 = bboxes[i][2]
+            clss_bbx2 = bboxes[j][2]
+            # Call the distance_between_bboxes function to calculate the distance and draw the line.
+            distance, image = distance_between_2bboxes(bbox1, bbox2, image, dist_thres)
+            distances.append((distance, (id_bbx1, id_bbx2), (clss_bbx1, clss_bbx2)))
+
+    return distances, image
+
+
+def extract_bbox_from_track(tracker):
+    list_bboxes = []
+    for track in tracker.tracks:
+        if not track.is_confirmed() or track.time_since_update > 1:
+            continue
+        xyxy = track.to_tlwh()
+        list_bboxes.append((np.round(xyxy), track.track_id, track.class_num))
+    return list_bboxes
+
+
+def dist_awareness(tracker, distances, names, dist_awr_thres = 10):
+    list_msgs = []
+    for distant in distances:
+        if distant[0] <= dist_awr_thres:
+            list_msgs.append(names[int(distant[2][0])] + " " + str(distant[1][0]) + " and " + names[int(distant[2][1])] + " " + str(distant[1][1]) + " are too close")
+    return list_msgs

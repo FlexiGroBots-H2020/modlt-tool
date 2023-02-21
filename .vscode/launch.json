@@ -12,17 +12,17 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             
-            "args": ["--source", "tph_yolov5/input/videos/extractA_Pilot2_review.mp4",
+            "args": ["--source", "tests/input/DJI_0455_recorte.mp4",
                 "--data" , "tph_yolov5/data/dataset_tractor.yaml",
                 "--weights", "tph_yolov5/models/best_tractorA.pt",
-                "--img", "1920",
+                "--img", "1536",
                 "--save-txt",
                 "--show-results",
-                "--iou-thres", "0.001",
+                "--iou-thres", "0.2",
                 "--n_init", "25",
                 "--max_cosine_distance", "0.99",
                 "--max_iou_distance", "0.99",
-                "--conf-thres", "0.4"
+                "--conf-thres", "0.01"
             ]
             /*
             "args": [
