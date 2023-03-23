@@ -11,10 +11,8 @@ RUN pip install torch==1.11.0+cu113 torchvision==0.12.0+cu113 torchaudio==0.11.0
 COPY requirements.txt /wd
 RUN pip install -r requirements.txt
 
+COPY UAV_ATD.py /wd
 COPY UAV_ATD_utils.py /wd
-COPY kserve_backbone_ATD.py /wd
-COPY UAV_ATD_kserve.py /wd
-COPY kserve_utils.py /wd
 COPY deep_sort/ /wd/deep_sort/
 COPY tools_clip/ /wd/tools_clip/
 COPY tph_yolov5/ /wd/tph_yolov5/
@@ -30,4 +28,4 @@ USER jovyan
 #RUN mkdir -p /wd/outputs/face_detection_cache/FaceDetector/
 
 
-ENTRYPOINT ["python", "-u", "kserve_backbone_ATD.py"]
+ENTRYPOINT ["python", "-u", "UAV_ATD.py"]

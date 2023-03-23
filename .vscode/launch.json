@@ -15,7 +15,7 @@
             "args": ["--source", "tests/input/DJI_0455_recorte.mp4",
                 "--data" , "tph_yolov5/data/dataset_tractor.yaml",
                 "--weights", "tph_yolov5/models/best_tractorA.pt",
-                "--img", "1536",
+                "--imgsz", "1536",
                 "--save-txt",
                 "--show-results",
                 "--iou-thres", "0.2",

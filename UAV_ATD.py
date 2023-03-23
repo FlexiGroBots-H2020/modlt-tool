@@ -41,6 +41,8 @@ from tph_yolov5.utils.general import (LOGGER, apply_classifier, check_file, chec
 from tph_yolov5.utils.plots import Annotator, colors
 from tph_yolov5.utils.torch_utils import load_classifier, select_device, time_sync
 
+from tph_yolov5.utils.augmentations import letterbox
+
 
 IMAGE_EXT = [".jpg", ".jpeg", ".webp", ".bmp", ".png"]
 
