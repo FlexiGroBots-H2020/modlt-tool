@@ -12,6 +12,7 @@ COPY requirements.txt /wd
 RUN pip install -r requirements.txt
 
 COPY UAV_ATD_utils.py /wd
+COPY mqtt_client.py /wd
 COPY kserve_backbone_ATD.py /wd
 COPY UAV_ATD_kserve.py /wd
 COPY kserve_utils.py /wd

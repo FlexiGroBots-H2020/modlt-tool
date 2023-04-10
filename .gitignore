@@ -3,6 +3,7 @@ data/
 runs/
 output/
 inputs/
+input/
 models/
 models_clip/
 __pycache__/

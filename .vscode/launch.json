@@ -12,17 +12,17 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             
-            "args": ["--source", "tests/input/DJI_0455_recorte.mp4",
+            "args": ["--source", "input/recorte_1.mp4",
                 "--data" , "tph_yolov5/data/dataset_tractor.yaml",
                 "--weights", "tph_yolov5/models/best_tractorA.pt",
                 "--imgsz", "1536",
                 "--save-txt",
                 "--show-results",
-                "--iou-thres", "0.2",
+                "--iou-thres", "0.1",
                 "--n_init", "25",
                 "--max_cosine_distance", "0.99",
                 "--max_iou_distance", "0.99",
-                "--conf-thres", "0.01"
+                "--conf-thres", "0.2"
             ]
             /*
             "args": [
@@ -37,7 +37,36 @@
                 "--fuse"
             ]
             */
+        },
+        {
+            "name": "test",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            
+            "args": [
+                "example.png",
+                "--device_id", "drone_A"
+            ]
         }
+        ,
+        {
+            "name": "inference_mqtt",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            
+            "args": [
+                "--device_id", "drone_pcMario",
+                "--video_path", "input/recorte_1.mp4",
+                "--fpsp", "2"
+            ],
+        }
+
 
     ]
 }

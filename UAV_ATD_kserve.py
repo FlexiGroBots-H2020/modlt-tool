@@ -135,13 +135,9 @@ def init_model(self):
     # check HW type
     self.device = select_device(device)
     
-    # Load the model
-    logging.info("Load model")
-    self.load()
    
     
 def load_model(self):
-    
     # Load TPH-yolov5 model
     w = str(self.args.weights[0] if isinstance(self.args.weights, list) else self.args.weights)
     classify, suffix, suffixes = False, Path(w).suffix.lower(), ['.pt', '.onnx', '.tflite', '.pb', '']
@@ -153,10 +149,12 @@ def load_model(self):
     
     # Run inference Once
     self.model(torch.zeros(1, 3, *self.args.imgsz).to(self.device).type_as(next(self.model.parameters())))
+    logging.info("Model loaded")
     
     
 def infer(self, img, id=0, frame_id=0):
-    logging.info("Adding device: {}".format(str(id)))
+    logging.info("Infer step -------------------------------------------------------")
+    start_time = time.time()
     self.active_devices.add_device(id, self.args)
     
     s = ""
@@ -165,7 +163,7 @@ def infer(self, img, id=0, frame_id=0):
     im0 = img.copy() # original dimensions
     logging.info("Original dim: {}".format(str(im0.shape)))
     
-    start_time = time.time()
+    
     # Padded resize
     img = letterbox(img, self.args.imgsz, stride=32, auto=True)[0] # model dimensions
     logging.info("After letterbox dim: {}".format(str(img.shape)))
@@ -189,20 +187,20 @@ def infer(self, img, id=0, frame_id=0):
     
     logging.info("Infer dim: {}".format(str(img.shape)))
     preprocess_time = time.time() - start_time
-    logging.info(f"Preproccess time: {preprocess_time:.2f}s")
+    logging.info(f"Preproccess time: {preprocess_time:.4f}s")
     
     
     start_time = time.time()
     # Inference
-    pred = self.model(img, augment=False, visualize=False)[0]
+    pred = self.model(img, augment=False, visualize=False)[0] # buscar parametro no recarga cache
     inference_time = time.time() - start_time
-    logging.info(f"Inference time: {inference_time:.2f}s")
+    logging.info(f"Inference time: {inference_time:.4f}s")
     
     start_time = time.time()
     # NMS detected bboxes
     pred = non_max_suppression(pred, self.args.conf_thres, self.args.iou_thres, self.args.classes, self.args.agnostic_nms, max_det=self.args.max_det)
     nms_time = time.time() - start_time
-    logging.info(f"NMS time: {nms_time:.2f}s")
+    logging.info(f"NMS time: {nms_time:.4f}s")
     
     # Process predictions
     for i, det in enumerate(pred):  # per image
@@ -210,6 +208,7 @@ def infer(self, img, id=0, frame_id=0):
         logging.info("Num detections: {}".format(str(len(det))))
         
         if len(det):
+            start_time = time.time()
             # Rescale boxes from img_size to im0 size                
             det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
             
@@ -229,14 +228,17 @@ def infer(self, img, id=0, frame_id=0):
             features = self.encoder(im0, bboxes)
             detections = [Detection(bbox, conf, class_num, feature) for bbox, conf, class_num, feature in zip(
                 bboxes, confs, classes, features)]
+            
+            postproc_time = time.time() - start_time
+            logging.info(f"Postproccess det time: {postproc_time:.4f}s")
 
             # run non-maxima supression
-            #boxs = np.array([d.tlwh for d in detections])
-            #scores = np.array([d.confidence for d in detections])
-            #class_nums = np.array([d.class_num for d in detections])
-            #indices = preprocessing.non_max_suppression(
-            #    boxs, class_nums, self.args.nms_max_overlap, scores)
-            #detections = [detections[i] for i in indices]
+            boxs = np.array([d.tlwh for d in detections])
+            scores = np.array([d.confidence for d in detections])
+            class_nums = np.array([d.class_num for d in detections])
+            indices = preprocessing.non_max_suppression(
+                boxs, class_nums, self.args.nms_max_overlap, scores)
+            detections = [detections[i] for i in indices]
 
             start_time = time.time()
             # Call the tracker for this device
@@ -245,7 +247,7 @@ def infer(self, img, id=0, frame_id=0):
             # update tracks
             update_tracks(self.active_devices.get_device(id).tracker, frame_id, self.args.save_txt, self.args.txt_path, self.args.save_img, self.args.show_results, im0, self.names)
             update_tracks_time = time.time() - start_time
-            logging.info(f"Update tracks time: {update_tracks_time:.2f}s")
+            logging.info(f"Update tracks time: {update_tracks_time:.4f}s")
         else:
             logging.info('No detections')
     
@@ -273,7 +275,7 @@ def infer(self, img, id=0, frame_id=0):
         img_distance = im0
         
     distance_calculation_time = time.time() - start_time
-    logging.info(f"Distance calculation time: {distance_calculation_time:.2f}s")
+    logging.info(f"Distance calculation time: {distance_calculation_time:.4f}s")
 
     logging.info(f"Done") 
     
