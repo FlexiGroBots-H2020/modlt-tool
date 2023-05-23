@@ -7,9 +7,40 @@ import paho.mqtt.publish as publish
 import time
 import os
 import paho.mqtt.client as mqtt
+import threading
+import logging
+import piexif
 
-def on_publish(client, userdata, result):
-    print(f"Data published: {result}")
+def add_metadata_to_image(img, metadata):
+    start_time = time.time()
+    logging.info("Convirtiendo metadatos a formato EXIF")
+    exif_dict = {"0th": metadata}
+    exif_bytes = piexif.dump(exif_dict)
+    logging.info("Metadatos convertidos en %.2f segundos", time.time() - start_time)
+
+    start_time = time.time()
+    logging.info("Añadiendo metadatos EXIF a la imagen")
+    img_encoded, buf = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 50])
+    img_with_metadata = bytearray(exif_bytes) + buf.tobytes()
+
+    logging.info("Imagen procesada con metadatos en %.2f segundos", time.time() - start_time)
+
+    return img_with_metadata
+
+def publish_mqtt_message(topic, payload, client_id):
+    start_time = time.time()
+    try:
+        publish.single(topic,
+                       payload,
+                       hostname=os.getenv('BROKER_ADDRESS'),
+                       port=int(os.getenv('BROKER_PORT')),
+                       client_id=client_id,
+                       auth={"username": os.getenv('BROKER_USER'), "password": os.getenv('BROKER_PASSWORD')})
+        #print(f"Published message: {payload[:50]}...")  # Truncate message for readability
+    except Exception as e:
+        print(f'Error publishing: {e}')
+    publish_time = time.time() - start_time
+    print(f"Publish time: {publish_time:.2f}s")
 
 # Función para codificar la imagen en base64
 def encode_image(image):
@@ -36,10 +67,6 @@ def resize_image(image, new_dimensions):
 
 # Función principal
 def main(args):
-    client = mqtt.Client("modtl-model")
-    client.on_publish = on_publish
-    client.username_pw_set(os.getenv('BROKER_USER'), os.getenv('BROKER_PASSWORD'))
-    client.connect(os.getenv('BROKER_ADDRESS'), int(os.getenv('BROKER_PORT')))
 
     # Abre el video
     video = cv2.VideoCapture(args.video_path)
@@ -60,7 +87,7 @@ def main(args):
 
         if current_frame % frames_to_skip == 0:
             read_time = time.time() - start_time
-            print(f"Current frame: {current_frame}")
+            print(f"Current frame ------------------------------> {frame_id}")
             print(f"Read time: {read_time:.2f}s")
 
             start_time = time.time()
@@ -70,28 +97,20 @@ def main(args):
             print(f"Resize time: {resize_time:.2f}s")
 
             start_time = time.time()
-            encoded_frame = encode_image(resized_frame)
+            metadata = {
+                piexif.ImageIFD.Artist: args.device_id,
+                piexif.ImageIFD.ImageID: str(frame_id),
+                piexif.ImageIFD.DateTime: str(time.time())
+            }
+            payload = add_metadata_to_image(resized_frame, metadata)
             encode_time = time.time() - start_time
-            print(f"Encode time: {encode_time:.2f}s")
-
-            # Crea el objeto JSON con la imagen y metadatos adicionales
-            payload_json = json.dumps({'img': encoded_frame, 'device_id': args.device_id, 'frame_id': frame_id, 'init_time': time.time()})
-
-            # Conéctate al broker MQTT
-            start_time = time.time()
-            try:
-                publish.single("common-apps/modtl-model/input",
-                            payload_json,
-                            hostname=os.getenv('BROKER_ADDRESS'),
-                            port=int(os.getenv('BROKER_PORT')),
-                            client_id="modtl-model",
-                            auth={"username": os.getenv('BROKER_USER'), "password": os.getenv('BROKER_PASSWORD')})
-                publish_time = time.time() - start_time
-                print(f"Publish time: {publish_time:.2f}s")
-            except Exception as e:
-                print(f'error publishing: {e}')
-
-            time.sleep(1)
+            print(f"Adding metadata time: {encode_time:.2f}s")
+            
+            # Create a new thread for publishing the MQTT message
+            publish_thread = threading.Thread(target=publish_mqtt_message, args=("common-apps/modtl-model/input", payload, args.device_id))
+            publish_thread.start()
+            time.sleep(0.1)
+            
             frame_id += 1
         current_frame += 1
 

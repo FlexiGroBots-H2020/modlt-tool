@@ -10,31 +10,44 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe(userdata['topic'])
 
 def on_message(client, userdata, msg):
+    current_time = time.time()
     json_data = json.loads(msg.payload.decode())
-    img_base64_str = json_data['im_detection']
     device_id = json_data['device']
     frame_id = json_data['frame']
     init_time = json_data['init_time']
+    tracks = json_data['tracks']
+    warnings = json_data['warnings']
+    distances = json_data['distances']
 
-    output_folder = "output/" + device_id
-    os.makedirs(output_folder, exist_ok=True)
-    output_filename = os.path.join(output_folder, f'decoded_image_{frame_id}.jpg')
-
-    img = base64.b64decode(img_base64_str)
-    with open(output_filename, "wb") as image_file:
-        image_file.write(img)
-
-    inference_delay = time.time() - init_time
+    inference_delay = current_time - float(init_time)
     print(f"{msg.topic} - Image {frame_id} from device {device_id} written at {time.time()}. Inference delay: {inference_delay:.2f} seconds")
+    print(f"Tracks: {tracks}")
+    print(f"Distances: {distances}")
+    print(f"Warnings: {warnings}")
+    
+    # Calculate and print FPS
+    last_frame_time = userdata['last_frame_time']
+    if last_frame_time is None:
+        userdata['last_frame_time'] = current_time
+    else:
+        time_difference = current_time - last_frame_time
+        fps = 1 / time_difference if time_difference > 0 else 0
+        print(f"FPS: {fps:.2f}")
 
+        userdata['last_frame_time'] = current_time
+    
+    
 def main(args):
-    client = mqtt.Client("listener_mario")
+    client_id = "listener_" + args.topic
+    client = mqtt.Client(client_id)
     client.on_connect = on_connect
     client.on_message = on_message
     client.connect(os.getenv('BROKER_ADDRESS'), int(os.getenv('BROKER_PORT')), 60)
     client.username_pw_set(os.getenv('BROKER_USER'), os.getenv('BROKER_PASSWORD'))
 
-    client.user_data_set({'topic': args.topic})
+    # Include 'last_frame_time' in the userdata dictionary
+    userdata = {'topic': args.topic, 'last_frame_time': None}
+    client.user_data_set(userdata)
 
     client.loop_forever()
 

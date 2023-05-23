@@ -23,7 +23,7 @@ def parser_ATD():
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[1536], help='inference size h,w')
     parser.add_argument('--conf-thres', type=float, default=0.15, help='confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.1, help='NMS IoU threshold')
-    parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
+    parser.add_argument('--max-det', type=int, default=100, help='maximum detections per image')
     parser.add_argument('--txt_path', type=str, default='', help='(optional) data to store txt path')
     parser.add_argument('--show-results', action='store_true', help='show results')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
@@ -47,7 +47,7 @@ def parser_ATD():
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     
     # tracking args
-    parser.add_argument('--max_iou_distance', type=float, default=0.9,
+    parser.add_argument('--max_iou_distance', type=float, default=0.95,
                         help='Maximum distance overlap between consecutive frames')
     parser.add_argument('--nms_max_overlap', type=float, default=0.3,
                         help='Non-maxima suppression threshold: Maximum detection overlap.')
@@ -57,7 +57,7 @@ def parser_ATD():
                         help='Maximum size of the appearance descriptors allery. If None, no budget is enforced.')
     parser.add_argument('--max_age', type=float, default=50,
                         help='Num of iterations until delete a track')
-    parser.add_argument('--n_init', type=float, default=7,
+    parser.add_argument('--n_init', type=float, default=3,
                         help='Num of detections until consider a track as valid')
    
     opt = parser.parse_args()
@@ -141,6 +141,7 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=None):
 
 
 def update_tracks(tracker, frame_count, save_txt, txt_path, save_img, view_img, img, names, thickness=3, info=True):
+    list_tracks = []
     if len(tracker.tracks):
         print("[Tracks]", len(tracker.tracks))
 
@@ -151,6 +152,8 @@ def update_tracks(tracker, frame_count, save_txt, txt_path, save_img, view_img, 
         class_num = track.class_num
         bbox = np.round(xyxy)
         class_name = names[int(class_num)]
+        list_tracks.append("Tracker ID: {}, Class: {}, BBox Coords (xmin, ymin, xmax, ymax): {}".format(
+                str(track.track_id), class_name, (int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3]))))
         if info:
             print("Tracker ID: {}, Class: {}, BBox Coords (xmin, ymin, xmax, ymax): {}".format(
                 str(track.track_id), class_name, (int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3]))))
@@ -170,7 +173,7 @@ def update_tracks(tracker, frame_count, save_txt, txt_path, save_img, view_img, 
         if save_img or view_img:  # Add bbox to image
             label = f'{class_name} #{track.track_id}'
             plot_one_box(xyxy, img, label=label, color=get_color_for(label), line_thickness=thickness)
-
+    return list_tracks
 
 def get_color_for(class_num):
     colors = [

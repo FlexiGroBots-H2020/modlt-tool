@@ -4,8 +4,28 @@ from PIL import Image
 import base64
 import io
 import json
+import piexif
 
 ENCODING = 'utf-8'
+
+def extract_metadata(exif_data):
+    metadata = []
+    if not exif_data or "0th" not in exif_data:
+        print("Metadata not found")
+        return
+
+    specified_tags = [piexif.ImageIFD.Artist, piexif.ImageIFD.ImageID, piexif.ImageIFD.DateTime]
+
+    for tag in specified_tags:
+        tag_name = piexif.TAGS["0th"][tag]["name"]
+        if tag in exif_data["0th"]:
+            tag_value = exif_data["0th"][tag]
+            if isinstance(tag_value, bytes):
+                tag_value = tag_value.decode("utf-8")
+            metadata.append(tag_value)
+        else:
+            print(f"{tag_name} ({tag}): not found")
+    return metadata
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -69,6 +89,19 @@ def calculate_new_dimensions(image, max_dimension):
 def resize_image_cv2(image, new_dimensions):
     return cv2.resize(image, new_dimensions, interpolation=cv2.INTER_AREA)
 
+def payload2info(payload):
+    # Extract input variables from request
+    exif_data = piexif.load(payload)
+    
+    metadata = extract_metadata(exif_data)
+    
+    # delete metadata EXIF 
+    exif_bytes = piexif.dump(exif_data)
+    img_without_metadata = payload[len(exif_bytes):]
+    img_data = np.frombuffer(img_without_metadata, dtype=np.uint8)
+    img = cv2.imdecode(img_data, cv2.IMREAD_COLOR)
+    return img, metadata
+
 
 def decode_image(encoded_image_data):
     image_data = base64.b64decode(encoded_image_data)
@@ -81,3 +114,18 @@ def decode_image(encoded_image_data):
     # Redimensiona la imagen
     img_np = resize_image_cv2(image, new_dimensions)
     return img_np
+
+def ndarray_to_list(obj):
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    return obj
+
+def prepare_nested_output(nested_obj):
+    output_list = []
+    for item in nested_obj:
+        if isinstance(item, tuple):
+            new_item = tuple(ndarray_to_list(sub_item) for sub_item in item)
+        else:
+            new_item = ndarray_to_list(item)
+        output_list.append(new_item)
+    return output_list

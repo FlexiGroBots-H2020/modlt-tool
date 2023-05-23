@@ -63,7 +63,7 @@
             "args": [
                 "--device_id", "drone_pcMario",
                 "--video_path", "input/recorte_1.mp4",
-                "--fpsp", "2"
+                "--fpsp", "5"
             ],
         }
 

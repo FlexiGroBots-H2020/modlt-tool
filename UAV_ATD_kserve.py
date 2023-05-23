@@ -245,7 +245,7 @@ def infer(self, img, id=0, frame_id=0):
             self.active_devices.process_request(id, detections)
 
             # update tracks
-            update_tracks(self.active_devices.get_device(id).tracker, frame_id, self.args.save_txt, self.args.txt_path, self.args.save_img, self.args.show_results, im0, self.names)
+            list_tracks = update_tracks(self.active_devices.get_device(id).tracker, frame_id, self.args.save_txt, self.args.txt_path, self.args.save_img, self.args.show_results, im0, self.names)
             update_tracks_time = time.time() - start_time
             logging.info(f"Update tracks time: {update_tracks_time:.4f}s")
         else:
@@ -273,12 +273,14 @@ def infer(self, img, id=0, frame_id=0):
     else:
         distances = []
         img_distance = im0
+        list_tracks = []
+        list_dist_awrns = []
         
     distance_calculation_time = time.time() - start_time
     logging.info(f"Distance calculation time: {distance_calculation_time:.4f}s")
 
     logging.info(f"Done") 
     
-    return img_distance, distances
+    return img_distance, list_tracks, distances, list_dist_awrns
 
         
