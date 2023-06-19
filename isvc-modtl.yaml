@@ -6,7 +6,7 @@ spec:
   predictor:
     containers:
       - name: kserve-container
-        image: mariotrivinor/modtl-tool:v11
+        image: mariotrivinor/modtl-tool:v0
         imagePullPolicy: Always 
         envFrom:
         - secretRef:

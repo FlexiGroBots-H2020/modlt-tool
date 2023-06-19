@@ -9,7 +9,6 @@ import torch
 import numpy as np
 import torch.backends.cudnn as cudnn
 from pathlib import Path
-from loguru import logger
 
 # deep sort imports
 from deep_sort import preprocessing, nn_matching

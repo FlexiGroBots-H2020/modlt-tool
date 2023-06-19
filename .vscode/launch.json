@@ -12,17 +12,17 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             
-            "args": ["--source", "input/recorte_1.mp4",
+            "args": ["--source", "input/recorte_twizy.mp4",
                 "--data" , "tph_yolov5/data/dataset_tractor.yaml",
                 "--weights", "tph_yolov5/models/best_tractorA.pt",
                 "--imgsz", "1536",
                 "--save-txt",
                 "--show-results",
-                "--iou-thres", "0.1",
-                "--n_init", "25",
-                "--max_cosine_distance", "0.99",
-                "--max_iou_distance", "0.99",
-                "--conf-thres", "0.2"
+                "--iou-thres", "0.4",
+                "--n_init", "7",
+                "--max_cosine_distance", "0.7",
+                "--max_iou_distance", "0.5",
+                "--conf-thres", "0.3"
             ]
             /*
             "args": [
@@ -62,8 +62,21 @@
             
             "args": [
                 "--device_id", "drone_pcMario",
-                "--video_path", "input/recorte_1.mp4",
+                "--input_path", "input/recorte_1.mp4",
+                "--topic", "common-apps/modtl-model/input",
                 "--fpsp", "5"
+            ],
+        },
+        {
+            "name": "listenner_mqtt",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            
+            "args": [
+                "--topic", "common-apps/modtl-model/ouput",
             ],
         }
 

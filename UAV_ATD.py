@@ -11,7 +11,7 @@ import numpy as np
 import torch.backends.cudnn as cudnn
 from pathlib import Path
 import os.path as osp
-from loguru import logger
+import logging
 
 # deep sort imports
 from deep_sort import preprocessing, nn_matching
@@ -108,10 +108,8 @@ def main(args):
             net = cv2.dnn.readNetFromONNX(w)
         else:
             check_requirements(('onnx', 'onnxruntime-gpu' if torch.has_cuda else 'onnxruntime'))
-            import onnxruntime
-            session = onnxruntime.InferenceSession(w, None)
     else: 
-        logger.info("TensorFlow has been disabled") # if you want to recover it take it from tph-yolov5 detect
+        logging.info("TensorFlow has been disabled") # if you want to recover it take it from tph-yolov5 detect
    
     imgsz = check_img_size(args.imgsz, s=stride)  # check image size
 
@@ -162,9 +160,9 @@ def main(args):
                 net.setInput(img)
                 pred = torch.tensor(net.forward())
             else:
-                pred = torch.tensor(session.run([session.get_outputs()[0].name], {session.get_inputs()[0].name: img}))
+                pred = 0
         else: 
-            logger.info("TensorFlow has been disabled") # if you want to recover it take it from tph-yolov5 detect
+            logging.info("TensorFlow has been disabled") # if you want to recover it take it from tph-yolov5 detect
         
         t3 = time_sync()
         dt[1] += t3 - t2
@@ -267,14 +265,14 @@ def main(args):
             vid_writer.write(im0)
             
         try:
-            logger.info(f"frame {frame_id}/{dataset.frames} Done. (detect:{t4 - t2:.3f}s / track:{t5 - t4:.3f}s)")   
+            logging.info(f"frame {frame_id}/{dataset.frames} Done. (detect:{t4 - t2:.3f}s / track:{t5 - t4:.3f}s)")   
         except:
-            logger.info(f"frame {frame_id}/{dataset.nf} Done. (detect:{t4 - t2:.3f}s / track:{t5 - t4:.3f}s)") 
+            logging.info(f"frame {frame_id}/{dataset.nf} Done. (detect:{t4 - t2:.3f}s / track:{t5 - t4:.3f}s)") 
         frame_id += 1
         
 
         
-    logger.info(f"Done") 
+    logging.info(f"Done") 
    
     vid_writer.release()
     
@@ -284,14 +282,14 @@ def main(args):
         res_file = osp.join(vis_folder, f"{timestamp}.txt")
         with open(res_file, 'w') as f:
             f.writelines(results)
-        logger.info(f"save results to {res_file}")
+        logging.info(f"save results to {res_file}")
 
     # Print results
     t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
-    logger.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS %.1fms track per image at shape {(1, 3, *imgsz)}' % t)
+    logging.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS %.1fms track per image at shape {(1, 3, *imgsz)}' % t)
     if args.save_txt or save_img:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if args.save_txt else ''
-        logger.info(f"Results saved to {colorstr('bold', save_dir)}{s}")
+        logging.info(f"Results saved to {colorstr('bold', save_dir)}{s}")
     if args.update:
         strip_optimizer(args.weights)  # update model (to fix SourceChangeWarning)
 
