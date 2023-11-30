@@ -12,16 +12,16 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             
-            "args": ["--source", "input/recorte_twizy.mp4",
+            "args": ["--source", "input/vinias_serbios/DJI_20230906115657_0006_D.MP4",
                 "--data" , "tph_yolov5/data/dataset_tractor.yaml",
-                "--weights", "tph_yolov5/models/best_tractorA.pt",
+                "--weights", "tph_yolov5/models/best_tractor_v3_1536.pt",
                 "--imgsz", "1536",
                 "--save-txt",
                 "--show-results",
-                "--iou-thres", "0.4",
-                "--n_init", "7",
+                "--iou-thres", "0.7",
+                "--n_init", "5",
                 "--max_cosine_distance", "0.7",
-                "--max_iou_distance", "0.5",
+                "--max_iou_distance", "0.7",
                 "--conf-thres", "0.3"
             ]
             /*
@@ -76,7 +76,40 @@
             "justMyCode": true,
             
             "args": [
-                "--topic", "common-apps/modtl-model/ouput",
+                "--topic", "common-apps/modtl-model/output/drone_B",
+            ],
+        },
+        {
+            "name": "datasets",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            
+            "args": [
+                
+            ],
+        }
+        ,
+        {
+            "name": "train",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            
+            "args": [
+                "--img", "1024",
+                "--adam",
+                "--batch", "4",
+                "--epochs", "120",
+                "--data", "./input/VisDroneTractor_v3/data.yaml",
+                "--weights", "yolov5l.pt",
+                "--hy", "./tph_yolov5/data/hyps/hyp.VisDrone.yaml",
+                "--cfg", "./tph_yolov5/models/yolov5l-xs-tph.yaml",
+                "--name", "tractor_v3"
             ],
         }
 

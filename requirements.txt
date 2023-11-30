@@ -33,3 +33,8 @@ git+https://github.com/openai/CLIP.git
 #MQTT
 paho-mqtt==1.6.1
 piexif
+
+fiftyone-db-ubuntu2204
+
+#label-studio
+#label-studio-sdk

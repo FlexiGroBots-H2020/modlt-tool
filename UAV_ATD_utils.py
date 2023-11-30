@@ -13,16 +13,37 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+def get_fps(video_path):
+    # Crear un objeto VideoCapture
+    video = cv2.VideoCapture(video_path)
+
+    # Verificar si el video se abrió correctamente
+    if not video.isOpened():
+        print("Error al abrir el vídeo o la cámara.")
+        return None
+
+    # Obtener los FPS del video
+    fps = video.get(cv2.CAP_PROP_FPS)
+    
+    # Cerrar el objeto VideoCapture
+    video.release()
+
+    return fps
+
+
 def parser_ATD():
     parser = argparse.ArgumentParser("TPH-yolov5 + Strong-SORT Demo!")
+    parser.add_argument('--pfps', type=int, default=10, help='number of frames processed from second')
+    parser.add_argument('--robot_id', default='testing', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--mqtt_topic', default='common-apps/modtl-model/output/', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob, 0 for webcam') 
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     ## TPH-Yolov5
     parser.add_argument('--data', type=str, default='tph_yolov5/data/dataset_tractor.yaml', help='(optional) dataset.yaml path')
-    parser.add_argument('--weights', nargs='+', type=str, default='./tph_yolov5/models/best_tractorA.pt', help='model path(s)')
+    parser.add_argument('--weights', nargs='+', type=str, default='./tph_yolov5/models/best_tractor_v3_1536.pt', help='model path(s)')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[1536], help='inference size h,w')
-    parser.add_argument('--conf-thres', type=float, default=0.15, help='confidence threshold')
-    parser.add_argument('--iou-thres', type=float, default=0.1, help='NMS IoU threshold')
+    parser.add_argument('--conf-thres', type=float, default=0.3, help='confidence threshold')
+    parser.add_argument('--iou-thres', type=float, default=0.5, help='NMS IoU threshold')
     parser.add_argument('--max-det', type=int, default=100, help='maximum detections per image')
     parser.add_argument('--txt_path', type=str, default='', help='(optional) data to store txt path')
     parser.add_argument('--show-results', action='store_true', help='show results')
@@ -43,13 +64,14 @@ def parser_ATD():
     parser.add_argument('--hide-labels', default=False, action='store_true', help='hide labels')
     parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
     parser.add_argument('--hide-class', default=False, action='store_true', help='hide class')
+    parser.add_argument('--mqtt_output', default=True, action='store_false', help='mqtt output')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     
     # tracking args
-    parser.add_argument('--max_iou_distance', type=float, default=0.95,
+    parser.add_argument('--max_iou_distance', type=float, default=0.7,
                         help='Maximum distance overlap between consecutive frames')
-    parser.add_argument('--nms_max_overlap', type=float, default=0.3,
+    parser.add_argument('--nms_max_overlap', type=float, default=0.2,
                         help='Non-maxima suppression threshold: Maximum detection overlap.')
     parser.add_argument('--max_cosine_distance', type=float, default=0.9,
                         help='Gating threshold for cosine distance metric (object appearance).')
@@ -57,7 +79,7 @@ def parser_ATD():
                         help='Maximum size of the appearance descriptors allery. If None, no budget is enforced.')
     parser.add_argument('--max_age', type=float, default=50,
                         help='Num of iterations until delete a track')
-    parser.add_argument('--n_init', type=float, default=3,
+    parser.add_argument('--n_init', type=float, default=5,
                         help='Num of detections until consider a track as valid')
    
     opt = parser.parse_args()
@@ -302,7 +324,7 @@ def extract_bbox_from_track(tracker):
 def dist_awareness(tracker, distances, names, dist_awr_thres = 10):
     list_msgs = []
     for distant in distances:
-        if distant[0] <= dist_awr_thres:
+        if ((distant[0] <= dist_awr_thres) and (names[int(distant[2][0])]!="people" or names[int(distant[2][1])]!="people")):
             list_msgs.append(names[int(distant[2][0])] + " " + str(distant[1][0]) + " and " + names[int(distant[2][1])] + " " + str(distant[1][1]) + " are too close")
     return list_msgs
 

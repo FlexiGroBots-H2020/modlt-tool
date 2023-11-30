@@ -2,11 +2,13 @@ apiVersion: serving.kserve.io/v1beta1
 kind: InferenceService
 metadata:
   name: modtl-model
+  namespace: common-apps
 spec:
   predictor:
+    serviceAccountName: modtl-service-account
     containers:
       - name: kserve-container
-        image: mariotrivinor/modtl-tool:v0
+        image: ghcr.io/flexigrobots-h2020/modtl-tool:v0
         imagePullPolicy: Always 
         envFrom:
         - secretRef:
@@ -14,5 +16,5 @@ spec:
         resources:
           limits:
             nvidia.com/gpu: 1
-            memory: 8Gi
-            cpu : 8
+            memory: 16Gi
+            cpu: 8

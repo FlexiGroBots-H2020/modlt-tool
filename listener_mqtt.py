@@ -4,6 +4,7 @@ import os
 import json
 import base64
 import time
+from collections import deque
 
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code " + str(rc))
@@ -24,6 +25,15 @@ def on_message(client, userdata, msg):
     print(f"Tracks: {tracks}")
     print(f"Distances: {distances}")
     print(f"Warnings: {warnings}")
+
+    if len(userdata['inference_delay_log']) >= 100:
+        userdata['inference_delay_log'].popleft()
+    userdata['inference_delay_log'].append(inference_delay)
+
+    # Calcular y mostrar la media del retraso de la inferencia de los últimos 100 frames
+    average_inference_delay = sum(userdata['inference_delay_log']) / len(userdata['inference_delay_log'])
+    print(f"Mean delay last 100 inferences: {average_inference_delay:.2f} s")
+
     
     # Calculate and print FPS
     last_frame_time = userdata['last_frame_time']
@@ -33,6 +43,13 @@ def on_message(client, userdata, msg):
         time_difference = current_time - last_frame_time
         fps = 1 / time_difference if time_difference > 0 else 0
         print(f"FPS: {fps:.2f}")
+
+        if len(userdata['fps_log']) >= 100:
+            userdata['fps_log'].popleft()
+        userdata['fps_log'].append(fps)
+
+        mfps = sum(userdata['fps_log']) / len(userdata['fps_log'])
+        print(f"MFPS (Mean last 100 FPS): {mfps:.2f}")
 
         userdata['last_frame_time'] = current_time
     
@@ -46,7 +63,7 @@ def main(args):
     client.username_pw_set(os.getenv('BROKER_USER'), os.getenv('BROKER_PASSWORD'))
 
     # Include 'last_frame_time' in the userdata dictionary
-    userdata = {'topic': args.topic, 'last_frame_time': None}
+    userdata = {'topic': args.topic, 'last_frame_time': None, 'fps_log': deque(), 'inference_delay_log': deque()}
     client.user_data_set(userdata)
 
     client.loop_forever()

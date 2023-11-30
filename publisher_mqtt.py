@@ -10,7 +10,7 @@ import paho.mqtt.client as mqtt
 import threading
 import logging
 import piexif
-
+ 
 def add_metadata_to_image(img, metadata):
     start_time = time.time()
     logging.info("Convirtiendo metadatos a formato EXIF")
@@ -124,7 +124,8 @@ def video_process(args):
             # Create a new thread for publishing the MQTT message
             publish_thread = threading.Thread(target=publish_mqtt_message, args=(args.topic, payload, args.device_id))
             publish_thread.start()
-            time.sleep(0.6)
+            #publish_mqtt_message(args.topic, payload, args.device_id)
+            time.sleep(0.35)
             
             frame_id += 1
         current_frame += 1
@@ -153,6 +154,7 @@ def image_process(args):
     # Create a new thread for publishing the MQTT message
     publish_thread = threading.Thread(target=publish_mqtt_message, args=(args.topic, payload, args.device_id))
     publish_thread.start()
+    #publish_mqtt_message(args.topic, payload, args.device_id)
 
     print("Image processed")
 

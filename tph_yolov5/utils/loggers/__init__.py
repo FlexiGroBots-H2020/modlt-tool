@@ -12,7 +12,7 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from utils.general import colorstr, emojis
-from utils.loggers.wandb.wandb_utils import WandbLogger
+from utils.loggers.wandb_f.wandb_utils import WandbLogger
 from utils.plots import plot_images, plot_results
 from utils.torch_utils import de_parallel
 

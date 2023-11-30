@@ -14,3 +14,4 @@ DIS/
 BoT-SORT/
 tests/
 env/
+wandb/
